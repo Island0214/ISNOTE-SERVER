@@ -18,9 +18,14 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 $api = app('Dingo\Api\Routing\Router');
+
 $api->version('v1', function ($api) {
     $api->group(['namespace' => 'App\Api\Controllers'], function ($api) {
-        $api->get('lessons','PostsController@index');
-        $api->get('lessons/{id}','PostsController@show');
+        $api->post('user/login','AuthController@authenticate');
+        $api->post('user/register','AuthController@register');
     });
+});
+
+$api->group(['middleware'=>'jwt.auth'],function ($api){
+    $api->get('user/me','AuthController@getAuthenticatedUser');
 });
