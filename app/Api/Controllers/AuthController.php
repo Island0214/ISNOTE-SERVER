@@ -50,10 +50,7 @@ class AuthController extends BaseController
         $registerInfo["info"] = "所有人";
         $registerInfo["modify"] = "所有人";
 
-//        echo "======================\n";
-//        echo "register\n";
-//        echo "name: {$registerInfo['name']}\n";
-//        echo "password:  {$registerInfo['password']}\n";
+
         if (strlen($registerInfo["name"]) == 0){
             return response()->json(['error' => '用户名不能为空！']);
         }
@@ -81,24 +78,47 @@ class AuthController extends BaseController
 
     public function getAuthenticatedUser()
     {
-
         try {
             if (!$user = JWTAuth::parseToken()->authenticate()) {
-                return response()->json(['user_not_found'], 404);
+                return response()->json(['error' => '获取信息失败']);
             }
         } catch (TokenExpiredException $e) {
-            return response()->json(['token_expired'], $e->getStatusCode());
+            return response()->json(['error' => 'token_expired']);
         } catch (TokenInvalidException $e) {
-            return response()->json(['token_invalid'], $e->getStatusCode());
+            return response()->json(['error' => 'token_invalid']);
         } catch (JWTException $e) {
-            return response()->json(['token_absent'], $e->getStatusCode());
+            return response()->json(['error' => 'token_absent']);
         }
         // the token is valid and we have found the user via the sub claim
         return response()->json(compact('user'));
     }
 
-    public function modifyUser()
+    public function modifyUser(Request $request)
     {
+        $credentials = $request->only('name', 'email', 'phone', 'gender', 'intro', 'icon', 'see', 'modify', 'search', 'info');
+        $user = User::where('name', $credentials['name'])->find(1);
+        $user->email = $credentials['email'];
+        $user->phone = $credentials['phone'];
+        $user->gender = $credentials['gender'];
+        $user->intro = $credentials['intro'];
+        $user->icon = $credentials['icon'];
+        $user->see = $credentials['see'];
+        $user->modify = $credentials['modify'];
+        $user->search = $credentials['search'];
+        $user->info = $credentials['info'];
+        $user->save();
+        return response()->json(['success' => '修改信息成功！']);
+    }
+
+    public function modifyPassword(Request $request)
+    {
+        $credentials = $request->only('name', 'password');
+        $credentials["password"] = Hash::make($credentials["password"]);
+        $user = User::where('name', $credentials['name'])->find(1);
+        $user->password = $credentials['password'];
+        $user->save();
+        return response()->json(['success' => '修改密码成功！']);
 
     }
+
 }
