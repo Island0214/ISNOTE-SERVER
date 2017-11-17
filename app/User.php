@@ -2,13 +2,22 @@
 
 namespace App;
 
-
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Auth\Authenticatable as AuthenticableTrait;
 
-class User extends \Eloquent implements Authenticatable
+class User extends Model implements Authenticatable
 {
     use AuthenticableTrait;
+
+    protected $table = 'users';
+
+    /**
+     * 与模型关联的数据表
+     *
+     * @var string
+     */
+//    protected $table = 'users';
 
     /**
      * The attributes that are mass assignable.
