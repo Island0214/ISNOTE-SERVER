@@ -8,7 +8,6 @@
 
 namespace App\Api\Controllers;
 
-
 use App\User;
 use Dingo\Api\Contract\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -40,11 +39,11 @@ class AuthController extends BaseController
     {
         $credentials = $request->only('name', 'password');
         $registerInfo = $request->only('name', 'password');
-        $registerInfo["email"] = "";
-        $registerInfo["phone"] = "";
-        $registerInfo["gender"] = "";
-        $registerInfo["icon"] = "";
-        $registerInfo["intro"] = "";
+        $registerInfo["email"] = "暂无";
+        $registerInfo["phone"] = "暂无";
+        $registerInfo["gender"] = "男";
+        $registerInfo["icon"] = "../";
+        $registerInfo["intro"] = "这个人有点懒...";
         $registerInfo["see"] = "所有人";
         $registerInfo["search"] = "所有人";
         $registerInfo["info"] = "所有人";

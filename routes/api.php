@@ -37,8 +37,19 @@ $api->version('v1', function ($api) {
         $api->post('user/register', 'AuthController@register');
         $api->post('user/modify', 'AuthController@modifyUser');
         $api->post('user/modifyPassword', 'AuthController@modifyPassword');
+
+        $api->post('notebook/getNotebookById', 'NotebookController@getNotebookById');
+
         $api->group(['middleware' => 'jwt.auth'], function ($api) {
             $api->get('user/me', 'AuthController@getAuthenticatedUser');
+
+            $api->post('notebook/createNotebook', 'NotebookController@createNotebook');
+            $api->post('notebook/modifyNotebook', 'NotebookController@modifyNotebook');
+            $api->get('notebook/getAllNotebooksByUser', 'NotebookController@getAllNotebooksByUser');
+
+            $api->post('note/createNote', 'NoteController@createNote');
+            $api->post('note/modifyNote', 'NoteController@modifyNote');
+            $api->get('note/getNotesByNotebook', 'NoteController@getNotesByNotebook');
         });
     });
 });
