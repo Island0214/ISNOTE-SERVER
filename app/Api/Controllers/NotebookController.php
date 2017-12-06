@@ -59,7 +59,6 @@ class NotebookController
             if (!$user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['error' => '获取信息失败']);
             } else {
-                //todo
                 $notebooks = Notebooks::where('user', $user->name)->get();
                 return response()->json(json_encode($notebooks, JSON_UNESCAPED_UNICODE));
             }

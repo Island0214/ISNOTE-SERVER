@@ -40,6 +40,7 @@ $api->version('v1', function ($api) {
 
         $api->post('notebook/getNotebookById', 'NotebookController@getNotebookById');
 
+
         $api->group(['middleware' => 'jwt.auth'], function ($api) {
             $api->get('user/me', 'AuthController@getAuthenticatedUser');
 
@@ -49,7 +50,16 @@ $api->version('v1', function ($api) {
 
             $api->post('note/createNote', 'NoteController@createNote');
             $api->post('note/modifyNote', 'NoteController@modifyNote');
-            $api->get('note/getNotesByNotebook', 'NoteController@getNotesByNotebook');
+            $api->get('note/getAllNotesByUser', 'NoteController@getAllNotesByUser');
+            $api->post('note/deleteNote', 'NoteController@deleteNote');
+            $api->post('note/getNotesByNotebook', 'NoteController@getNotesByNotebook');
+            $api->post('note/getNoteById', 'NoteController@getNoteById');
+
+            $api->post('like/likeNote', 'LikeController@like');
+            $api->post('like/cancelLike', 'LikeController@cancelLike');
+
+            $api->post('tag/addTag', 'TagController@addTag');
+            $api->post('tag/deleteTag', 'TagController@deleteTag');
         });
     });
 });
