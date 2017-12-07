@@ -15,13 +15,10 @@ use App\Notebooks;
 use App\Post;
 use App\Tag;
 use Dingo\Api\Contract\Http\Request;
-use Illuminate\Http\Response;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\Controller;
 
 
 class NoteController
@@ -73,14 +70,25 @@ class NoteController
 
     public function modifyNote(Request $request)
     {
-        $credentials = $request->only('id', 'title', 'body', 'authority', 'tags');
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $credentials = $request->only('id', 'title', 'body', 'authority');
         $note = Note::where([
             ['id', $credentials['id']]
-        ]);
+        ])->first();
         $note->note_title = $credentials['title'];
         $note->note_body = $credentials['body'];
         $note->note_authority = $credentials['authority'];
-        $note->tags = $credentials['tags'];
         $note->save();
     }
 
@@ -157,28 +165,15 @@ class NoteController
     {
         if (!empty($_FILES['image'])) {
             $file = $_FILES['image'];
-            $path = $request->file('image')->store('pics');
+            $path = $request->file('image')->store('public');
             $array = explode("/", $path);
 
             $url = $path;
-//            return Response::make($request->file('image'))->header('Content-Type', 'image/png');
             return response()->json(compact('url'));
 
-//            $destination = $destination . basename($filename);
-//            return $destination;
-//            return $fileinfo['tmp_name'];
-//            $path = $file->store('photos', 'uploads');
-//            $array = explode("/", $path);
-//            $move = move_uploaded_file($file['tmp_name'], $destination);
-//            if (!$move) {
-//                return response()->json(compact('destination'));
-//                return response()->json(['error' => '文件信息错误！']);
-//            }
         } else {
             return response()->json(['error' => '文件不存在！']);
         }
-//        $url = '/public/pics/' . basename($_FILES['image']['name']);
-//        return response()->json(compact('url'));
 
     }
 

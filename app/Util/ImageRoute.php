@@ -16,7 +16,7 @@ class ImageRoute
 
 
         //获取当前的url
-        $realpath = str_replace('pics/','',Request::path());
+        $realpath = str_replace('/storage/app/pics/','',Request::path());
 
         $path = storage_path() . $realpath;
 
