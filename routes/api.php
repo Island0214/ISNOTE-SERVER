@@ -40,6 +40,8 @@ $api->version('v1', function ($api) {
 
         $api->post('notebook/getNotebookById', 'NotebookController@getNotebookById');
 
+        $api->post('note/uploadImage', 'NoteController@uploadImage');
+
 
         $api->group(['middleware' => 'jwt.auth'], function ($api) {
             $api->get('user/me', 'AuthController@getAuthenticatedUser');
@@ -63,3 +65,4 @@ $api->version('v1', function ($api) {
         });
     });
 });
+
