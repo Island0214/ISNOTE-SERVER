@@ -18,7 +18,7 @@ class PostController
 {
     public function getPostInfo(Request $request)
     {
-        $like_info = $request->only('note_id');
+//        $like_info = $request->only('note_id');
         try {
             if (!$user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['error' => '获取信息失败']);
@@ -30,20 +30,11 @@ class PostController
         } catch (JWTException $e) {
             return response()->json(['error' => 'token_absent']);
         }
-        $like = Like::where([
-            ['user', $user->name],
-            ['note_id', $like_info['note_id']]
-        ]);
-        if ($like) {
-            return true;
-        } else {
-            return false;
-        }
+
     }
 
-    public function like(Request $request)
+    public function sharePost(Request $request)
     {
-        $like_info = $request->only('note_id');
         try {
             if (!$user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['error' => '获取信息失败']);
@@ -55,8 +46,14 @@ class PostController
         } catch (JWTException $e) {
             return response()->json(['error' => 'token_absent']);
         }
-        $like_info['user'] = $user->name;
-        Like::create($like_info);
+        $post_info = $request->only('note_id', 'content');
+
+        $post_info['user'] = $user->name;
+        $post_info['type'] = 1;
+
+
+        $post = Post::create($post_info);
+        return response()->json(compact('post'));
     }
 
 }

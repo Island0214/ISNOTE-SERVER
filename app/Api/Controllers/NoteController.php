@@ -14,7 +14,9 @@ use App\Note;
 use App\Notebooks;
 use App\Post;
 use App\Tag;
+use App\Fork;
 use Dingo\Api\Contract\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
@@ -90,6 +92,10 @@ class NoteController
         $note->note_body = $credentials['body'];
         $note->note_authority = $credentials['authority'];
         $note->save();
+        $note = Note::where([
+            ['id', $credentials['id']]
+        ])->first();
+        return response()->json(compact('note'));
     }
 
     public function getNotesByNotebook(Request $request)
@@ -155,6 +161,7 @@ class NoteController
                 $note['like_count'] = Like::where('note_id', $infos['id'])->count();;
                 $note['post_count'] = Post::where('note_id', $infos['id'])->count();;
                 $note['tags'] = Tag::where('note_id', $infos['id'])->get();
+                $note['fork_count'] = Fork::where('from_note_id', $infos['id'])->count();;
 
                 return response()->json(compact('note'));
             }
@@ -175,6 +182,67 @@ class NoteController
             return response()->json(['error' => '文件不存在！']);
         }
 
+    }
+
+    public function forkNote(Request $request)
+    {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $infos = $request->only('notebook', 'authority', 'note');
+
+        $from_note = Note::where('id', $infos['note'])->first();
+
+        $note_info = array(
+            "user" => $user->name,
+            "notebook" => $infos['notebook'],
+            "note_title" => $from_note->note_title,
+            "note_body" => $from_note->note_body,
+            "note_authority" => $infos['authority'],
+        );
+        $to_note = Note::create($note_info);
+
+        $fork_info = array(
+            "from_note_id" => $from_note->id,
+            "to_note_id" => $to_note->id,
+        );
+
+        $fork = Fork::create($fork_info);
+
+        return response()->json(compact('fork'));
+
+    }
+
+    public function getHotNotes()
+    {
+        $allNotes = DB::table('notes')
+            ->leftJoin('likes', 'notes.id', '=', 'likes.note_id')
+            ->leftJoin('forks', 'notes.id', '=', 'forks.from_note_id')
+            ->leftJoin('reposts', 'notes.id', '=', 'reposts.note_id')
+            ->select(DB::raw('notes.*, count(*) as count'))
+            ->where('note_authority', '所有人')
+            ->groupBy('notes.id')
+            ->orderBy('count', 'desc')
+            ->limit(5)
+            ->get();
+//        $note['like_count'] = Like::where('note_id', $infos['id'])->count();;
+//        $note['post_count'] = Post::where('note_id', $infos['id'])->count();;
+//        $note['fork_count'] = Fork::where('from_note_id', $infos['id'])->count();;
+//        $hotNotesID = array();
+//        for ($x = 0; $x < count($allNotes); $x++) {
+//            array_push($hotNotesID, $allNotes[$x]);
+//            array_sort($hotNotesID);
+//        }
+        return response()->json(json_encode($allNotes, JSON_UNESCAPED_UNICODE));
     }
 
     public function getNotesByNotebookAndAuthority(Request $request)

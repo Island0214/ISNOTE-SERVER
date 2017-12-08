@@ -41,6 +41,7 @@ $api->version('v1', function ($api) {
         $api->post('notebook/getNotebookById', 'NotebookController@getNotebookById');
 
         $api->post('note/uploadImage', 'NoteController@uploadImage');
+        $api->get('note/getHotNotes', 'NoteController@getHotNotes');
 
 
         $api->group(['middleware' => 'jwt.auth'], function ($api) {
@@ -50,9 +51,10 @@ $api->version('v1', function ($api) {
             $api->post('notebook/modifyNotebook', 'NotebookController@modifyNotebook');
             $api->get('notebook/getAllNotebooksByUser', 'NotebookController@getAllNotebooksByUser');
 
+            $api->get('note/getAllNotesByUser', 'NoteController@getAllNotesByUser');
             $api->post('note/createNote', 'NoteController@createNote');
             $api->post('note/modifyNote', 'NoteController@modifyNote');
-            $api->get('note/getAllNotesByUser', 'NoteController@getAllNotesByUser');
+            $api->post('note/forkNote', 'NoteController@forkNote');
             $api->post('note/deleteNote', 'NoteController@deleteNote');
             $api->post('note/getNotesByNotebook', 'NoteController@getNotesByNotebook');
             $api->post('note/getNoteById', 'NoteController@getNoteById');
@@ -62,6 +64,8 @@ $api->version('v1', function ($api) {
 
             $api->post('tag/addTag', 'TagController@addTag');
             $api->post('tag/deleteTag', 'TagController@deleteTag');
+
+            $api->post('post/sharePost', 'PostController@sharePost');
         });
     });
 });
