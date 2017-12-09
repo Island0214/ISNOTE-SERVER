@@ -39,9 +39,9 @@ class AuthController extends BaseController
     {
         $credentials = $request->only('name', 'password');
         $registerInfo = $request->only('name', 'password');
-        $registerInfo["email"] = "暂无";
-        $registerInfo["phone"] = "暂无";
-        $registerInfo["gender"] = "男";
+        $registerInfo["email"] = "";
+        $registerInfo["phone"] = "";
+        $registerInfo["gender"] = "";
         $registerInfo["icon"] = "../";
         $registerInfo["intro"] = "这个人有点懒...";
         $registerInfo["see"] = "所有人";
@@ -95,10 +95,15 @@ class AuthController extends BaseController
     public function modifyUser(Request $request)
     {
         $credentials = $request->only('name', 'email', 'phone', 'gender', 'intro', 'icon', 'see', 'modify', 'search', 'info');
-        $user = User::where('name', $credentials['name'])->find(1);
-        $user->email = $credentials['email'];
-        $user->phone = $credentials['phone'];
-        $user->gender = $credentials['gender'];
+        $user = User::where('name', $credentials['name'])->first();
+//        return response()->json(compact('user'));
+
+        if ($credentials['email'] != "")
+            $user->email = $credentials['email'];
+        if ($credentials['phone'] != "")
+            $user->phone = $credentials['phone'];
+        if ($credentials['gender'] != "")
+            $user->gender = $credentials['gender'];
         $user->intro = $credentials['intro'];
         $user->icon = $credentials['icon'];
         $user->see = $credentials['see'];

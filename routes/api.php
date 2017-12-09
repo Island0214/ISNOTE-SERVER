@@ -66,6 +66,15 @@ $api->version('v1', function ($api) {
             $api->post('tag/deleteTag', 'TagController@deleteTag');
 
             $api->post('post/sharePost', 'PostController@sharePost');
+            $api->post('post/sendPost', 'PostController@sendPost');
+            $api->get('post/getPostsOfMyFollowing', 'PostController@getPostsOfMyFollowing');
+
+            $api->get('friend/getOneRecommendation', 'FriendController@getOneRecommendation');
+            $api->get('friend/getMyFollowers', 'FriendController@getMyFollowers');
+            $api->get('friend/getMyFollowing', 'FriendController@getMyFollowing');
+            $api->post('friend/followUser', 'FriendController@followUser');
+            $api->post('friend/cancelFollow', 'FriendController@cancelFollow');
+            $api->post('friend/getFriendByName', 'FriendController@getFriendByName');
         });
     });
 });

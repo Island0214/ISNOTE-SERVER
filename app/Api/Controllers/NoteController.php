@@ -45,9 +45,18 @@ class NoteController
 //        $noteInfos['notebook'] = $credentials['notebook_id'];
 //        $noteInfos['note_title'] = $credentials['name'];
 //        $noteInfos['note_authority'] = $credentials['authority'];
-        $credentials['note_body'] = '<p></p>';
+        $credentials['note_body'] = '';
 
         $note = Note::create($credentials);
+
+        if ($note->note_authority == '所有人') {
+            $post = array(
+                'user' => $note->user,
+                'note_id' => $note->id,
+                'type' => 2
+            );
+            Post::create($post);
+        }
         return response()->json(compact('note'));
     }
 
@@ -95,6 +104,25 @@ class NoteController
         $note = Note::where([
             ['id', $credentials['id']]
         ])->first();
+
+        if ($note->note_authority == '所有人') {
+            $hasPost = Post::where([
+                ['note_id', $note->id],
+                ['type', 3]
+            ])->count();
+            if ($hasPost > 0) {
+                $post = Post::where([
+                    ['note_id', $note->id],
+                    ['type', 3]
+                ])->delete();
+            }
+            $post = array(
+                'user' => $user->name,
+                'note_id' => $note->id,
+                'type' => 3
+            );
+            Post::create($post);
+        }
         return response()->json(compact('note'));
     }
 
