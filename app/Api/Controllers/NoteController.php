@@ -462,6 +462,59 @@ class NoteController
 
     }
 
+    public function getNoteSearchResult(Request $request)
+    {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $infos = $request->only('contain');
+
+        $notes = DB::table('notes')
+            ->leftJoin('notetags', 'notes.id', '=', 'notetags.note_id')
+            ->where([
+                ['notes.note_body', 'like', '%' . $infos['contain'] . '%'],
+            ])
+            ->orWhere([
+                ['notes.note_title', 'like', '%' . $infos['contain'] . '%'],
+            ])
+            ->orWhere([
+                ['tag', 'like', '%' . $infos['contain'] . '%']
+            ])
+            ->select('notes.id', 'notes.user', 'notes.note_authority', 'notes.note_body', 'notes.updated_at', 'note_title')
+            ->orderBy('notes.updated_at', 'desc')
+            ->distinct()
+            ->get();
+
+        $note = array();
+
+        for ($count = 0; $count < count($notes); $count++) {
+            if ($notes[$count]->note_authority == '仅好友' && $user->name != $notes[$count]->user) {
+                if (!$this->isFriend($user->name, $notes[$count]->user)) {
+                    continue;
+                }
+            }
+            if ($notes[$count]->note_authority == '只有我') {
+                if ($user->name != $notes[$count]->user) {
+                    continue;
+                }
+            }
+            array_push($note, $notes[$count]);
+
+        }
+
+        return response()->json(json_encode($note, JSON_UNESCAPED_UNICODE));
+
+    }
+
     public function searchInNotebook(Request $request)
     {
         try {

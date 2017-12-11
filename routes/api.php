@@ -62,6 +62,7 @@ $api->version('v1', function ($api) {
             $api->post('note/getNotesByUser', 'NoteController@getNotesByUser');
             $api->post('note/searchInNotebook', 'NoteController@searchInNotebook');
             $api->post('note/searchAll', 'NoteController@searchAll');
+            $api->post('note/getNoteSearchResult', 'NoteController@getNoteSearchResult');
 
             $api->post('like/likeNote', 'LikeController@like');
             $api->post('like/cancelLike', 'LikeController@cancelLike');
@@ -72,6 +73,8 @@ $api->version('v1', function ($api) {
             $api->post('post/sharePost', 'PostController@sharePost');
             $api->post('post/sendPost', 'PostController@sendPost');
             $api->get('post/getPostsOfMyFollowing', 'PostController@getPostsOfMyFollowing');
+            $api->post('post/getPostSearchResult', 'PostController@getPostSearchResult');
+
 
             $api->get('friend/getOneRecommendation', 'FriendController@getOneRecommendation');
             $api->get('friend/getMyFollowers', 'FriendController@getMyFollowers');
@@ -79,6 +82,7 @@ $api->version('v1', function ($api) {
             $api->post('friend/followUser', 'FriendController@followUser');
             $api->post('friend/cancelFollow', 'FriendController@cancelFollow');
             $api->post('friend/getFriendByName', 'FriendController@getFriendByName');
+            $api->post('friend/getUserSearchResult', 'FriendController@getUserSearchResult');
         });
     });
 });

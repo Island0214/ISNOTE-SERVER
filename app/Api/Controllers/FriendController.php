@@ -220,4 +220,51 @@ class FriendController
 
         return response()->json(compact('friend'));
     }
+
+    public function getUserSearchResult(Request $request)
+    {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $infos = $request->only('contain');
+
+
+        $users = User::where('name', 'like', '%' . $infos['contain'] . '%')
+            ->orWhere('intro', 'like', '%' . $infos['contain'] . '%')
+            ->distinct()
+            ->get();
+
+        for ($i = 0; $i < count($users); $i++) {
+//            $info = User::where('name', $users[$i]->user)->first();
+            if ($this->isFriend($user->name, $users[$i]->name)) {
+                $users[$i]['isFriend'] = "互相关注";
+            } else {
+
+                if (Friend::where([
+                        ['user', $users[$i]->name],
+                        ['follower', $user->name]
+                    ])->count() > 0) {
+                    $users[$i]['isFriend'] = "取消关注";
+                } else {
+                    $users[$i]['isFriend'] = "关注";
+                }
+            }
+
+            if ($user->name == $users[$i]->name) {
+                $users[$i]['isFriend'] = "我的信息";
+            }
+//            array_push($result, $info);
+        }
+
+        return response()->json(json_encode($users, JSON_UNESCAPED_UNICODE));
+    }
 }

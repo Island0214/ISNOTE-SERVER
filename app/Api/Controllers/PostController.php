@@ -134,4 +134,30 @@ class PostController
         return response()->json(json_encode($posts, JSON_UNESCAPED_UNICODE));
     }
 
+    public function getPostSearchResult(Request $request)
+    {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $infos = $request->only('contain');
+
+        $posts = Post::where([
+            ['content', 'like', '%' . $infos['contain'] . '%']
+        ])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return response()->json(json_encode($posts, JSON_UNESCAPED_UNICODE));
+
+    }
+
 }
