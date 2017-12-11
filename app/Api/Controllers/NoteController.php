@@ -9,12 +9,14 @@
 namespace app\Api\Controllers;
 
 
+use App\Friend;
 use App\Like;
 use App\Note;
 use App\Notebooks;
 use App\Post;
 use App\Tag;
 use App\Fork;
+use App\User;
 use Dingo\Api\Contract\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -273,18 +275,268 @@ class NoteController
         return response()->json(json_encode($allNotes, JSON_UNESCAPED_UNICODE));
     }
 
-    public function getNotesByNotebookAndAuthority(Request $request)
+    public function getNotesByUser(Request $request)
     {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $visitor = $request->only('user');
+        $isFriend = $this->isFriend($user->name, $visitor['user']);
+//        return $this->isFriend($user->name, $visitor['user']);
+
+        if (!$isFriend) {
+            $notebooks = Notebooks::where('user', $visitor['user'])
+                ->where('authority', '所有人')
+                ->distinct()
+                ->get();
+        } else {
+            $notebooks = Notebooks::where('user', $visitor['user'])
+                ->where('authority', '所有人')
+                ->orWhere('authority', '仅好友')
+                ->distinct()
+                ->get();
+        }
+
+//        return response()->json(json_encode($notebooks, JSON_UNESCAPED_UNICODE));
+
+
+        $notes = array();
+
+        for ($count = 0; $count < count($notebooks); $count++) {
+            if (!$isFriend) {
+                $notesOfNotebook = Note::where([
+                    ['notebook', $notebooks[$count]->id],
+                    ['note_authority', '所有人'],
+                    ['user', $visitor['user']]
+                ])
+                    ->distinct()
+                    ->get()->toArray();
+            } else {
+                $notesOfNotebook = Note::where([
+                    ['notebook', $notebooks[$count]->id],
+                    ['note_authority', '所有人'],
+                    ['user', $visitor['user']]
+                ])
+                    ->orWhere([
+                        ['note_authority', '仅好友'],
+                        ['notebook', $notebooks[$count]->id],
+                        ['user', $visitor['user']]
+                    ])
+                    ->distinct()
+                    ->get()->toArray();
+            }
+//            return gettype($notesOfNotebook);
+//            $notesOfNotebook = (array)$notesOfNotebook;
+            $notes = array_merge($notes, $notesOfNotebook);
+        }
+
+
+        return response()->json(json_encode($notes, JSON_UNESCAPED_UNICODE));
 
     }
 
     public function searchAll(Request $request)
     {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
+
+        $infos = $request->only('contain');
+
+
+        $users = User::where('name', 'like', '%' . $infos['contain'] . '%')
+            ->orWhere('intro', 'like', '%' . $infos['contain'] . '%')
+            ->distinct()
+            ->limit(3)
+            ->get();
+
+        for ($i = 0; $i < count($users); $i++) {
+//            $info = User::where('name', $users[$i]->user)->first();
+            if ($this->isFriend($user->name, $users[$i]->name)) {
+                $users[$i]['isFriend'] = "互相关注";
+            } else {
+
+                if (Friend::where([
+                        ['user', $users[$i]->name],
+                        ['follower', $user->name]
+                    ])->count() > 0) {
+                    $users[$i]['isFriend'] = "取消关注";
+                } else {
+                    $users[$i]['isFriend'] = "关注";
+                }
+            }
+
+            if ($user->name == $users[$i]->name) {
+                $users[$i]['isFriend'] = "我的信息";
+            }
+//            array_push($result, $info);
+        }
+
+        $notes = DB::table('notes')
+            ->leftJoin('notetags', 'notes.id', '=', 'notetags.note_id')
+            //            ->leftJoin('friends as f1', 'notes.user', '=', 'f1.user')
+//            ->select('notes.id', 'f1.user', 'f1.follower as friend')
+//            ->leftJoin('friends as f2', 'friend', '=', 'f2.user')
+            ->where([
+                ['notes.note_body', 'like', '%' . $infos['contain'] . '%'],
+//                ['notes.note_authority', '=', '所有人']
+            ])
+            ->orWhere([
+                ['notes.note_title', 'like', '%' . $infos['contain'] . '%'],
+//                ['notes.note_authority', '=', '仅好友'],
+//                ['f1.user', '=', 'f2.follower']
+            ])
+            ->orWhere([
+                ['tag', 'like', '%' . $infos['contain'] . '%']
+            ])
+            ->select('notes.id', 'notes.user', 'notes.note_authority', 'notes.note_body', 'notes.updated_at', 'note_title')
+//            ->orWhere([
+//                ['notes.note_title', 'like', '%' . $infos['contain'] . '%' ],
+//                ['notes.note_authority', '=', '所有人']
+//            ])
+//            ->orWhere([
+//                ['notes.note_title', 'like', '%' . $infos['contain'] . '%' ],
+//                ['notes.note_authority', '=', '仅好友'],
+//                ['f1.user', '=', 'f2.follower']
+//            ])
+//            ->select('notes.id', 'f1.user', 'f1.follower as friend', 'f2.follower as me', 'notes.note_authority')
+
+            ->orderBy('notes.updated_at', 'desc')
+            ->distinct()
+            //            ->whereExists(function ($query) use () {
+//                $query->select(DB::raw(1))
+//                    ->from('friends')
+//                    ->whereRaw('orders.user_id = users.id');
+//            })
+            ->get();
+
+        $posts = Post::where([
+            ['content', 'like', '%' . $infos['contain'] . '%']
+        ])
+            ->orderBy('updated_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        $note = array();
+
+        for ($count = 0; $count < count($notes); $count++) {
+            if ($notes[$count]->note_authority == '仅好友' && $user->name != $notes[$count]->user) {
+                if (!$this->isFriend($user->name, $notes[$count]->user)) {
+                    continue;
+                }
+            }
+            if ($notes[$count]->note_authority == '只有我') {
+                if ($user->name != $notes[$count]->user) {
+                    continue;
+                }
+            }
+            array_push($note, $notes[$count]);
+
+            if (count($note) == 3) {
+                break;
+            }
+        }
+
+
+        $result = array($users, $note, $posts);
+
+
+        return response()->json(json_encode($result, JSON_UNESCAPED_UNICODE));
 
     }
 
-    public function searchInside(Request $request)
+    public function searchInNotebook(Request $request)
     {
+        try {
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => '获取信息失败']);
+            }
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => '获取信息失败']);
+        }
 
+        $infos = $request->only('notebook', 'contain');
+
+        if ($infos['notebook'] == 0) {
+            $notes = DB::table('notes')
+                ->leftJoin('notetags', 'notes.id', '=', 'notetags.note_id')
+                ->where([
+                    ['user', $user->name],
+                    ['note_title', 'like', '%' . $infos['contain'] . '%']
+                ])
+                ->orWhere([
+                    ['user', $user->name],
+                    ['note_body', 'like', '%' . $infos['contain'] . '%']
+                ])
+                ->orWhere([
+                    ['user', $user->name],
+                    ['tag', 'like', '%' . $infos['contain'] . '%']
+                ])
+                ->select('notes.id', 'notes.notebook', 'notes.note_title', 'notes.note_body', 'notes.note_authority', 'notes.updated_at')
+                ->distinct()
+                ->get()
+                ->toArray();
+        } else {
+            $notes = DB::table('notes')
+                ->leftJoin('notetags', 'notes.id', '=', 'notetags.note_id')
+                ->where([
+                    ['notebook', $infos['notebook']],
+                    ['note_title', 'like', '%' . $infos['contain'] . '%']
+                ])
+                ->orWhere([
+                    ['notebook', $infos['notebook']],
+                    ['note_body', 'like', '%' . $infos['contain'] . '%']
+                ])
+                ->orWhere([
+                    ['notebook', $infos['notebook']],
+                    ['tag', 'like', '%' . $infos['contain'] . '%']
+                ])
+                ->select('notes.id', 'notes.notebook', 'notes.note_title', 'notes.note_body', 'notes.note_authority', 'notes.updated_at')
+                ->distinct()
+                ->get()
+                ->toArray();
+        }
+
+        return response()->json(json_encode($notes, JSON_UNESCAPED_UNICODE));
     }
+
+    public function isFriend($user1, $user2)
+    {
+        $friend1 = Friend::where([
+            ['user', $user1],
+            ['follower', $user2]
+        ])->count();
+
+        $friend2 = Friend::where([
+            ['user', $user2],
+            ['follower', $user1]
+        ])->count();
+
+        if ($friend1 > 0 && $friend2 > 0)
+            return true;
+        else
+            return false;
+    }
+
 }

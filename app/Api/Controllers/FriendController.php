@@ -182,7 +182,6 @@ class FriendController
             return true;
         else
             return false;
-
     }
 
     public function getFriendByName(Request $request)

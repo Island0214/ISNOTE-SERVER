@@ -86,7 +86,15 @@ class PostController
 
     public function getPostsByUser(Request $request)
     {
+        $user = $request->only('user');
 
+        $posts = Post::where(
+            'user', $user['user']
+        )
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return response()->json(json_encode($posts, JSON_UNESCAPED_UNICODE));
     }
 
     public function getPostsOfMyFollowing()
@@ -113,6 +121,7 @@ class PostController
             })
             ->select('reposts.user', 'note_id', 'reposts.updated_at', 'type', 'content')
             ->orderBy('reposts.updated_at', 'desc')
+            ->limit(15)
             ->get();
 
 //        for ($i = 0; $i < count($posts); $i++) {

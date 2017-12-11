@@ -42,6 +42,7 @@ $api->version('v1', function ($api) {
 
         $api->post('note/uploadImage', 'NoteController@uploadImage');
         $api->get('note/getHotNotes', 'NoteController@getHotNotes');
+        $api->post('post/getPostsByUser', 'PostController@getPostsByUser');
 
 
         $api->group(['middleware' => 'jwt.auth'], function ($api) {
@@ -58,6 +59,9 @@ $api->version('v1', function ($api) {
             $api->post('note/deleteNote', 'NoteController@deleteNote');
             $api->post('note/getNotesByNotebook', 'NoteController@getNotesByNotebook');
             $api->post('note/getNoteById', 'NoteController@getNoteById');
+            $api->post('note/getNotesByUser', 'NoteController@getNotesByUser');
+            $api->post('note/searchInNotebook', 'NoteController@searchInNotebook');
+            $api->post('note/searchAll', 'NoteController@searchAll');
 
             $api->post('like/likeNote', 'LikeController@like');
             $api->post('like/cancelLike', 'LikeController@cancelLike');
